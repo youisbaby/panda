@@ -5,7 +5,11 @@ import (
 )
 
 func ControllerTest(c *Controller) {
-	c.Write([]byte("ControllerTest"))
+	ret := struct {
+		Name string
+		Age  int
+	}{}
+	c.Write([]byte(RenderForm(&ret)))
 }
 
 // go test -run=TestServer

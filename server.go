@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/agtorre/gocolorize"
 	"io"
-
 	"log"
 	"net"
 	"net/http"
