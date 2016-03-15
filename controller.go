@@ -2,6 +2,7 @@ package panda
 
 import (
 	"fmt"
+	. "github.com/sczhaoyu/panda/session"
 	"html/template"
 	"net/http"
 	"reflect"
@@ -16,6 +17,7 @@ type Controller struct {
 	http.ResponseWriter                   //输出信息
 	Data                map[string]string //渲染时候的参数
 	Tpl                 string            //渲染使用的模板
+	SessionManager      *Manager          //sesion管理器
 }
 
 //创建控制器
@@ -24,13 +26,54 @@ func newController(r *http.Request, w http.ResponseWriter) *Controller {
 	c.Request = r
 	c.ResponseWriter = w
 	c.Data = make(map[string]string, 0)
+	c.Request.ParseForm()
+	//加入session管理器
+	if SessionSwitch && panda.SessionManager != nil {
+		c.SessionManager = panda.SessionManager
+	}
 	return &c
+}
+
+//获取Session
+func (c *Controller) GetSession(key string) interface{} {
+	sess, err := c.SessionManager.SessionStart(c.ResponseWriter, c.Request)
+	defer sess.SessionRelease(c.ResponseWriter)
+	if err != nil {
+		return nil
+	}
+	return sess.Get(key)
+}
+
+//设置SESSION
+func (c *Controller) SetSession(key string, val interface{}) error {
+	sess, err := c.SessionManager.SessionStart(c.ResponseWriter, c.Request)
+	defer sess.SessionRelease(c.ResponseWriter)
+	err = sess.Set(key, val)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+//删除SESSION
+func (c *Controller) DeleteSession(key string) error {
+	sess, err := c.SessionManager.SessionStart(c.ResponseWriter, c.Request)
+	defer sess.SessionRelease(c.ResponseWriter)
+	err = sess.Delete(key)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+//销毁用户的SESSION
+func (c *Controller) DestroySession() {
+	c.SessionManager.SessionDestroy(c.ResponseWriter, c.Request)
 }
 func (c *Controller) NotFound() {
 	notFound(c.ResponseWriter)
 }
 func (c *Controller) Write(b []byte) {
-	c.ResponseWriter.Header().Add("access-control-allow-origin", "*")
 	c.ResponseWriter.Header().Add("content-type", "text/html;charset=utf-8")
 	c.ResponseWriter.Write(b)
 }
@@ -39,6 +82,8 @@ func (c *Controller) Render() {
 	t.Execute(c.ResponseWriter, c.Data)
 
 }
+
+//将参数转化为一个结构
 func (c *Controller) ParseForm(obj interface{}) error {
 	form := c.Request.Form
 	objT := reflect.TypeOf(obj)
@@ -65,7 +110,6 @@ func (c *Controller) ParseForm(obj interface{}) error {
 		} else {
 			tag = tags[0]
 		}
-
 		value := form.Get(tag)
 		if len(value) == 0 {
 			continue

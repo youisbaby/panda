@@ -10,14 +10,6 @@ import (
 	"time"
 )
 
-const (
-	MEMCACHE  = "memcache"
-	COUCHBASE = "couchbase"
-	MYSQL     = "mysql"
-	REDIS     = "redis"
-	POSTGRES  = "postgres"
-)
-
 // SessionStore contains all data for one session process with specific id.
 type SessionStore interface {
 	Set(key, value interface{}) error     //set session value
@@ -204,7 +196,7 @@ func (manager *Manager) GC() {
 	time.AfterFunc(time.Duration(manager.config.Gclifetime)*time.Second, func() { manager.GC() })
 }
 
-// Regenerate a session id for this SessionStore who's id is saving in http request.
+//重新生成 sessionID
 func (manager *Manager) SessionRegenerateId(w http.ResponseWriter, r *http.Request) (session SessionStore) {
 	sid, err := manager.sessionId(r)
 	if err != nil {

@@ -3,6 +3,7 @@ package panda
 import (
 	"fmt"
 	"github.com/agtorre/gocolorize"
+	. "github.com/sczhaoyu/panda/session"
 	"io"
 	"log"
 	"net"
@@ -15,14 +16,14 @@ import (
 
 //服务器
 type Panda struct {
-	Port         int          //启动端口
-	Server       *http.Server //http服务
-	HttpSSL      bool         //是否启动SSL
-	NetWork      string       //工作模式
-	LocalAddress string       //监听地址和端口
-	HttpSslCert  string       //SSL信息
-	HttpSslKey   string       //SSL信息
-
+	Port           int          //启动端口
+	Server         *http.Server //http服务
+	HttpSSL        bool         //是否启动SSL
+	NetWork        string       //工作模式
+	LocalAddress   string       //监听地址和端口
+	HttpSslCert    string       //SSL信息
+	HttpSslKey     string       //SSL信息
+	SessionManager *Manager     //Session管理
 }
 
 var (
@@ -69,9 +70,14 @@ func Run() {
 //初始化服务地址
 func (p *Panda) init() {
 	//启动地址检测
-	if p.LocalAddress == "" {
+	if LocalAddress == "" {
 		p.LocalAddress = ":5200"
+	} else {
+		p.LocalAddress = LocalAddress
 	}
+	panda.HttpSSL = HttpSSL
+	panda.HttpSslCert = HttpSslCert
+	panda.HttpSslKey = HttpSslKey
 	parts := strings.SplitN(p.LocalAddress, ":", 2)
 	p.LocalAddress = parts[0] + ":" + parts[1]
 	port, err := strconv.Atoi(parts[1])
@@ -80,6 +86,22 @@ func (p *Panda) init() {
 		panic(fmt.Sprintf("port is error %v", parts[1]))
 	}
 	p.Port = port
+	//session
+	if SessionSwitch {
+		//SESSION开启，未发现配置信息，加入默认的内存配置
+		if SessionType == "" {
+			SessionType = SESSION_MEMORY
+			SessionConfig = `{"cookieName":"GOSESSIONID","gclifetime":3600}`
+		}
+		sess, err := NewManager(SessionType, SessionConfig)
+		if err != nil {
+			panic(err)
+		}
+		go sess.GC()
+		panda.SessionManager = sess
+
+	}
+	//session end
 }
 
 type pandaLogs struct {

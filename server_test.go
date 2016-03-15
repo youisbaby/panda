@@ -1,19 +1,17 @@
 package panda
 
 import (
+	"fmt"
 	"testing"
 )
 
 func ControllerTest(c *Controller) {
-	ret := struct {
-		Name string
-		Age  int
-	}{}
-	c.Write([]byte(RenderForm(&ret)))
+
+	c.Write([]byte("hello"))
 }
 
 // go test -run=TestServer
 func TestServer(t *testing.T) {
-	HandlerRouter(CASUAL, "/.html", ControllerTest)
+	HandlerRouter(CASUAL, "/", ControllerTest)
 	Run()
 }

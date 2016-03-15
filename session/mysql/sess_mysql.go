@@ -17,7 +17,6 @@
 //		go globalSessions.GC()
 //	}
 //
-// more docs: http://beego.me/docs/module/session.md
 package session
 
 import (
